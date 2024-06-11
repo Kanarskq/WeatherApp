@@ -1,6 +1,7 @@
 package com.example.weatherapp.dtos
 
 data class WeatherResponse(
-    val list: List<WeatherData>,
-    val city: City
+    val location: Location,
+    val current: Current,
+    val forecast: Forecast
 )

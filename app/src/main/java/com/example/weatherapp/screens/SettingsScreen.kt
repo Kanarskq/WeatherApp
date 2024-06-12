@@ -28,7 +28,6 @@ fun SettingsScreen(navController: NavHostController, city: String) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(text = "Settings", style = TextStyle(fontSize = 24.sp))

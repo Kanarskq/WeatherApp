@@ -19,6 +19,7 @@ import androidx.compose.material.Tab
 import androidx.compose.material.TabRow
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,9 +71,11 @@ fun MainScreen(city: String, navController: NavHostController, tempUnit: String)
         )
 
         Column {
-            MainCard(weather, tempUnit) {
+            MainCard(weather, tempUnit, onSettingsClick = {
                 navController.navigate("settings/$city")
-            }
+            }, onFavoriteCitiesClick = {
+                navController.navigate("favorite_cities")
+            })
             TabLayout(weather, tempUnit)
         }
     }
@@ -103,7 +106,7 @@ private fun getWeatherResponse(city: String, callback: (WeatherResponse?) -> Uni
 }
 
 @Composable
-fun MainCard(weather: WeatherResponse, tempUnit: String, onSettingsClick: () -> Unit) {
+fun MainCard(weather: WeatherResponse, tempUnit: String, onSettingsClick: () -> Unit, onFavoriteCitiesClick: () -> Unit) {
     Column(
         modifier = Modifier
             .padding(5.dp)
@@ -137,11 +140,23 @@ fun MainCard(weather: WeatherResponse, tempUnit: String, onSettingsClick: () -> 
                         style = TextStyle(fontSize = 24.sp)
                     )
                 }
-                Text(
-                    modifier = Modifier.padding(top = 8.dp),
-                    text = weather.location.name,
-                    style = TextStyle(fontSize = 24.sp)
-                )
+                Row {
+                    Text(
+                        modifier = Modifier.padding(top = 8.dp),
+                        text = weather.location.name,
+                        style = TextStyle(fontSize = 24.sp)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = "Favorite Icon",
+                        tint = Color.Black,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(20.dp)
+                            .clickable { onFavoriteCitiesClick() }
+                    )
+                }
+
                 Image(
                     painter = rememberAsyncImagePainter("https:${weather.current.condition.icon}"),
                     contentDescription = "Weather Icon",
@@ -149,7 +164,7 @@ fun MainCard(weather: WeatherResponse, tempUnit: String, onSettingsClick: () -> 
                         .padding(end = 8.dp, top = 8.dp)
                         .size(140.dp)
                 )
-                Row{
+                Row {
                     Text(
                         modifier = Modifier.padding(top = 4.dp),
                         text = if (tempUnit == "celsius") "${weather.current.temp_c} °C" else "${weather.current.temp_f} °F",

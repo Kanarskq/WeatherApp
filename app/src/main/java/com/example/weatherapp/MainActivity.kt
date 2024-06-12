@@ -4,14 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.weatherapp.screens.FavoriteCitiesScreen
 import com.example.weatherapp.screens.MainScreen
 import com.example.weatherapp.screens.SettingsScreen
 import com.example.weatherapp.screens.WelcomeScreen
 import com.example.weatherapp.ui.theme.WeatherAppTheme
+import com.example.weatherapp.viewModels.FavoriteCitiesViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +42,12 @@ fun SetupNavGraph(navController: NavHostController) {
         composable("settings/{city}") { backStackEntry ->
             val city = backStackEntry.arguments?.getString("city") ?: "Odesa"
             SettingsScreen(navController = navController, city = city)
+        }
+        composable("favorite_cities") {
+            FavoriteCitiesScreen(
+                favoriteCitiesViewModel = remember { FavoriteCitiesViewModel() },
+                navController = navController
+            )
         }
     }
 }

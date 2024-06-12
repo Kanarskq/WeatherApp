@@ -1,71 +1,44 @@
 package com.example.weatherapp
 
-import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import com.example.weatherapp.dtos.WeatherResponse
-import com.example.weatherapp.instances.ApiClient
-import com.example.weatherapp.screens.MainCard
-import com.example.weatherapp.screens.TabLayout
-import com.example.weatherapp.services.WeatherApiService
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.weatherapp.screens.MainScreen
+import com.example.weatherapp.screens.SettingsScreen
+import com.example.weatherapp.screens.WelcomeScreen
 import com.example.weatherapp.ui.theme.WeatherAppTheme
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
-private const val API_KEY = "cecff5365fa34a0fb3d191655240106"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        getWeatherResponse("Odesa", this) { weatherResponse ->
-            setContent {
-                WeatherAppTheme {
-                    weatherResponse?.let {
-                        Image(
-                            painter = painterResource(id = R.drawable.main_background),
-                            contentDescription = "background",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-
-                        Column{
-                            MainCard(it)
-                            TabLayout(it)
-                        }
-                    }
-                }
+        setContent {
+            WeatherAppTheme {
+                val navController = rememberNavController()
+                SetupNavGraph(navController = navController)
             }
         }
     }
 }
 
-private fun getWeatherResponse (city: String, context: Context, callback: (WeatherResponse?) -> Unit){
-    val apiService = ApiClient.instance.create(WeatherApiService::class.java)
-    val call = apiService.getWeather(API_KEY, city)
-
-    call.enqueue(object : Callback<WeatherResponse> {
-        override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-            if (response.isSuccessful) {
-                val weatherResponse = response.body()
-                Log.d("Request Success", "Response: ${response.body()}")
-                callback(weatherResponse)
-            } else {
-                Log.d("Request Error", "Error: ${response.code()}")
-                callback(null)
-            }
+@Composable
+fun SetupNavGraph(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = "welcome") {
+        composable("welcome") {
+            WelcomeScreen(navController = navController)
         }
-
-        override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-            Log.d("Request Error", "VolleyError: ${t.message}")
-            callback(null)
+        composable("main/{city}/{tempUnit}") { backStackEntry ->
+            val city = backStackEntry.arguments?.getString("city") ?: "Odesa"
+            val tempUnit = backStackEntry.arguments?.getString("tempUnit") ?: "celsius"
+            MainScreen(city = city, navController, tempUnit = tempUnit)
         }
-    })
+        composable("settings/{city}") { backStackEntry ->
+            val city = backStackEntry.arguments?.getString("city") ?: "Odesa"
+            SettingsScreen(navController = navController, city = city)
+        }
+    }
 }

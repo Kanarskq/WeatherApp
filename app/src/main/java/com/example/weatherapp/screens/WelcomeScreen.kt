@@ -16,14 +16,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.example.weatherapp.UserSession
+import com.example.weatherapp.repositories.UserRepository
 
 @Composable
-fun WelcomeScreen(navController: NavController) {
+fun WelcomeScreen(navController: NavController, userRepository: UserRepository) {
     val city = remember { mutableStateOf("Odesa") }
 
     Column(
@@ -56,7 +56,17 @@ fun WelcomeScreen(navController: NavController) {
         Button(
             onClick = {
                 if (city.value.isNotEmpty()) {
-                    navController.navigate("main/${city.value}/celsius") // default to celsius initially
+                    val userEmail = UserSession.currentUserEmail
+                    userEmail?.let { email ->
+                        val user = userRepository.getUserByEmail(email)
+                        user?.let { currentUser ->
+                            val favoriteCities = currentUser.favoriteCities.toMutableList()
+                            favoriteCities.add(0, city.value)
+                            currentUser.favoriteCities = favoriteCities
+                            userRepository.updateUser(currentUser)
+                            navController.navigate("main/${city.value}")
+                        }
+                    }
                 }
             },
             modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
@@ -66,9 +76,3 @@ fun WelcomeScreen(navController: NavController) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun WelcomeScreenPreview() {
-    val navController = rememberNavController()
-    WelcomeScreen(navController = navController)
-}

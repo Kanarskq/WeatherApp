@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.weatherapp.R
+import com.example.weatherapp.dtos.User
 import com.example.weatherapp.dtos.WeatherResponse
 import com.example.weatherapp.instances.ApiClient
 import com.example.weatherapp.services.WeatherApiService
@@ -53,7 +54,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
-fun MainScreen(city: String, navController: NavHostController, tempUnit: String) {
+fun MainScreen(city: String, navController: NavHostController, user: User) {
     var weatherResponse by remember { mutableStateOf<WeatherResponse?>(null) }
 
     LaunchedEffect(city) {
@@ -71,12 +72,12 @@ fun MainScreen(city: String, navController: NavHostController, tempUnit: String)
         )
 
         Column {
-            MainCard(weather, tempUnit, onSettingsClick = {
-                navController.navigate("settings/$city")
+            MainCard(weather, user, onSettingsClick = {
+                navController.navigate("settings")
             }, onFavoriteCitiesClick = {
                 navController.navigate("favorite_cities")
             })
-            TabLayout(weather, tempUnit)
+            TabLayout(weather, user)
         }
     }
 }
@@ -106,7 +107,7 @@ private fun getWeatherResponse(city: String, callback: (WeatherResponse?) -> Uni
 }
 
 @Composable
-fun MainCard(weather: WeatherResponse, tempUnit: String, onSettingsClick: () -> Unit, onFavoriteCitiesClick: () -> Unit) {
+fun MainCard(weather: WeatherResponse, user: User, onSettingsClick: () -> Unit, onFavoriteCitiesClick: () -> Unit) {
     Column(
         modifier = Modifier
             .padding(5.dp)
@@ -167,7 +168,7 @@ fun MainCard(weather: WeatherResponse, tempUnit: String, onSettingsClick: () -> 
                 Row {
                     Text(
                         modifier = Modifier.padding(top = 4.dp),
-                        text = if (tempUnit == "celsius") "${weather.current.temp_c} °C" else "${weather.current.temp_f} °F",
+                        text = if (user.tempUnit == "celsius") "${weather.current.temp_c} °C" else "${weather.current.temp_f} °F",
                         style = TextStyle(fontSize = 24.sp)
                     )
                     Icon(
@@ -192,7 +193,7 @@ fun MainCard(weather: WeatherResponse, tempUnit: String, onSettingsClick: () -> 
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun TabLayout(weather: WeatherResponse, tempUnit: String) {
+fun TabLayout(weather: WeatherResponse, user: User) {
     val tabList = listOf("Today", "Forecast")
     val pagerState = rememberPagerState()
     val coroutineScope = rememberCoroutineScope()
@@ -230,15 +231,15 @@ fun TabLayout(weather: WeatherResponse, tempUnit: String) {
             modifier = Modifier.weight(1.0f)
         ) { page ->
             when (page) {
-                0 -> TabToday(weather, tempUnit)
-                1 -> TabForecast(weather, tempUnit)
+                0 -> TabToday(weather, user)
+                1 -> TabForecast(weather, user)
             }
         }
     }
 }
 
 @Composable
-fun TabToday(weather: WeatherResponse, tempUnit: String) {
+fun TabToday(weather: WeatherResponse, user: User) {
     LazyColumn {
         items(weather.forecast.forecastday.first().hour) { hour ->
             val time = hour.time.split(" ")[1]
@@ -250,7 +251,7 @@ fun TabToday(weather: WeatherResponse, tempUnit: String) {
             ) {
                 Text(text = time, style = TextStyle(fontSize = 18.sp))
                 Text(
-                    text = if (tempUnit == "celsius") "${hour.temp_c} °C" else "${hour.temp_f} °F",
+                    text = if (user.tempUnit == "celsius") "${hour.temp_c} °C" else "${hour.temp_f} °F",
                     style = TextStyle(fontSize = 18.sp))
                 Image(
                     painter = rememberAsyncImagePainter("https:${hour.condition.icon}"),
@@ -263,7 +264,7 @@ fun TabToday(weather: WeatherResponse, tempUnit: String) {
 }
 
 @Composable
-fun TabForecast(weather: WeatherResponse, tempUnit: String) {
+fun TabForecast(weather: WeatherResponse, user: User) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -274,8 +275,12 @@ fun TabForecast(weather: WeatherResponse, tempUnit: String) {
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = day.date, style = TextStyle(fontSize = 18.sp), modifier = Modifier.padding(8.dp))
-                Text(text = if (tempUnit == "celsius") "${day.day.avgtemp_c} °C" else "${day.day.avgtemp_f} °F", style = TextStyle(fontSize = 18.sp), modifier = Modifier.padding(8.dp))
+                Text(text = day.date,
+                    style = TextStyle(fontSize = 18.sp),
+                    modifier = Modifier.padding(8.dp))
+                Text(text = if (user.tempUnit == "celsius") "${day.day.avgtemp_c} °C" else "${day.day.avgtemp_f} °F",
+                    style = TextStyle(fontSize = 18.sp),
+                    modifier = Modifier.padding(8.dp))
                 Image(
                     painter = rememberAsyncImagePainter("https:${day.day.condition.icon}"),
                     contentDescription = "Weather Icon",

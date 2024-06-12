@@ -13,11 +13,12 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,22 +28,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.weatherapp.dtos.FavoriteCity
+import com.example.weatherapp.dtos.User
+import com.example.weatherapp.repositories.UserRepository
 import com.example.weatherapp.viewModels.FavoriteCitiesViewModel
 
 @Composable
 fun FavoriteCitiesScreen(
     favoriteCitiesViewModel: FavoriteCitiesViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    user: User,
+    userRepository: UserRepository
 ) {
-    var newFavoriteCity by rememberSaveable { mutableStateOf("") }
-    var showMessage by rememberSaveable { mutableStateOf(false) }
+    var newFavoriteCity by remember { mutableStateOf("") }
+    var showMessage by remember { mutableStateOf(false) }
+    var favoriteCities by remember { mutableStateOf(user.favoriteCities) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
     ) {
-        // Text for the title
         Text(
             text = "Favorite Places",
             style = TextStyle(fontSize = 24.sp),
@@ -56,13 +61,14 @@ fun FavoriteCitiesScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Button for adding a new favorite city
         Button(
             onClick = {
                 if (newFavoriteCity.isNotBlank()) {
                     favoriteCitiesViewModel.isCityValid(newFavoriteCity) { exists ->
                         if (exists) {
-                            favoriteCitiesViewModel.addFavoriteCity(newFavoriteCity)
+                            val updatedUser = user.copy(favoriteCities = user.favoriteCities + newFavoriteCity)
+                            userRepository.updateUser(updatedUser)
+                            favoriteCities = updatedUser.favoriteCities
                             newFavoriteCity = ""
                             showMessage = false
                         } else {
@@ -85,11 +91,16 @@ fun FavoriteCitiesScreen(
         }
 
         LazyColumn {
-            items(favoriteCitiesViewModel.favoriteCities) { favoriteCity ->
+            items(favoriteCities) { favoriteCity ->
                 FavoriteCityItem(
-                    favoriteCity = favoriteCity,
+                    favoriteCity = FavoriteCity(favoriteCity),
                     onItemClick = {
-                        navController.navigate("main/${favoriteCity.cityName}/celsius")
+                        navController.navigate("main/$favoriteCity")
+                    }, {
+                        val updatedFavoriteCities = user.favoriteCities.filter { it != favoriteCity }
+                        val updatedUser = user.copy(favoriteCities = updatedFavoriteCities)
+                        userRepository.updateUser(updatedUser)
+                        favoriteCities = updatedUser.favoriteCities
                     }
                 )
             }
@@ -100,7 +111,8 @@ fun FavoriteCitiesScreen(
 @Composable
 fun FavoriteCityItem(
     favoriteCity: FavoriteCity,
-    onItemClick: () -> Unit
+    onItemClick: () -> Unit,
+    onDeleteItemClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -117,6 +129,11 @@ fun FavoriteCityItem(
             onClick = onItemClick
         ) {
             Icon(Icons.Default.Info, contentDescription = "Open")
+        }
+        IconButton(
+            onClick = onDeleteItemClick
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = "Open")
         }
     }
 }

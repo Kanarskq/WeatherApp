@@ -19,15 +19,18 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.weatherapp.dtos.User
+import com.example.weatherapp.repositories.UserRepository
 
 @Composable
-fun SettingsScreen(navController: NavHostController, city: String) {
-    var isCelsius by remember { mutableStateOf(true) }
+fun SettingsScreen(navController: NavHostController, user: User, userRepository: UserRepository) {
+    var isCelsius by remember { mutableStateOf(user.tempUnit == "celsius") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(text = "Settings", style = TextStyle(fontSize = 24.sp))
@@ -52,7 +55,11 @@ fun SettingsScreen(navController: NavHostController, city: String) {
         }
 
         Button(
-            onClick = { navController.navigate("main/$city/${if (isCelsius) "celsius" else "fahrenheit"}") }
+            onClick = {
+                val updatedUser = user.copy(tempUnit = if (isCelsius) "celsius" else "fahrenheit")
+                userRepository.updateUser(updatedUser)
+                navController.navigate("main/${user.favoriteCities.firstOrNull() ?: "Odesa"}")
+            }
         ) {
             Text(text = "Save and Return", style = TextStyle(fontSize = 18.sp))
         }

@@ -1,89 +1,142 @@
 package com.example.weatherapp.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.weatherapp.UserSession
-import com.example.weatherapp.repositories.UserRepository
+import com.example.weatherapp.R
+import com.example.weatherapp.ui.theme.BluePink
+import com.example.weatherapp.viewModels.LoginViewModel
 
 
 @Composable
-fun LoginScreen(navController: NavHostController, userRepository: UserRepository) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+fun LoginScreen(navController: NavHostController, loginViewModel: LoginViewModel) {
+    val email by loginViewModel.email
+    val password by loginViewModel.password
+    val errorMessage by loginViewModel.errorMessage
 
+    Image(
+        painter = painterResource(id = R.drawable.main_background),
+        contentDescription = "background",
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color.Gray.copy(alpha = 0.1f)),
+                    startY = 0.5f
+                )
+            )
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
+            .padding(vertical = 24.dp, horizontal = 16.dp),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Login", style = TextStyle(fontSize = 24.sp))
+        Text(
+            text = "Login",
+            style = TextStyle(fontSize = 24.sp, color = Color(0xFFFFFBE5)),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            onValueChange = { loginViewModel.email.value = it },
+            label = { Text("Email", color = Color(0xFFFFFBE5)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = BluePink,
+                unfocusedBorderColor = Color(0xFFFFFBE5).copy(alpha = 0.5f),
+                textColor = Color(0xFFFFFBE5)
+            )
         )
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth()
+            onValueChange = { loginViewModel.password.value = it },
+            label = { Text("Password", color = Color(0xFFFFFBE5)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = BluePink,
+                unfocusedBorderColor = Color(0xFFFFFBE5).copy(alpha = 0.5f),
+                textColor = Color(0xFFFFFBE5)
+            )
         )
-
         Button(
             onClick = {
-                val user = userRepository.getUserByEmail(email)
-                if (user != null && user.password == password) {
-                    UserSession.currentUserEmail = email
-                    if (user.favoriteCities.isNotEmpty()) {
-                        navController.navigate("main/${user.favoriteCities.first()}")
-                    } else {
-                        navController.navigate("welcome")
+                loginViewModel.login(
+                    onSuccess = { city ->
+                        navController.navigate("main/$city")
+                    },
+                    onFailure = { error ->
+                        loginViewModel.errorMessage.value = error
                     }
-                } else {
-                    errorMessage = "Invalid email or password"
-                }
+                )
             },
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = BluePink),
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Text(text = "Login")
+            Text(
+                text = "Login",
+                style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5))
+            )
         }
 
-
-        errorMessage?.let {
-            Text(text = it, style = TextStyle(fontSize = 14.sp, color = Color.Red))
+        if (errorMessage.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                style = TextStyle(fontSize = 18.sp, color = Color.Red)
+            )
         }
 
         Button(
             onClick = {
                 navController.navigate("register")
             },
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = BluePink),
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Text(text = "Register")
+            Text(
+                text = "Register",
+                style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5))
+            )
         }
     }
 }

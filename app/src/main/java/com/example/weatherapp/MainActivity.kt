@@ -18,6 +18,8 @@ import com.example.weatherapp.screens.SettingsScreen
 import com.example.weatherapp.screens.WelcomeScreen
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 import com.example.weatherapp.viewModels.FavoriteCitiesViewModel
+import com.example.weatherapp.viewModels.LoginViewModel
+import com.example.weatherapp.viewModels.RegisterViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,10 +42,10 @@ object UserSession {
 fun SetupNavGraph(navController: NavHostController, userRepository: UserRepository) {
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
-            LoginScreen(navController = navController, userRepository = userRepository)
+            LoginScreen(navController = navController, loginViewModel = remember { LoginViewModel(userRepository) })
         }
         composable("register") {
-            RegisterScreen(navController = navController, userRepository = userRepository)
+            RegisterScreen(navController = navController, registerViewModel = remember { RegisterViewModel(userRepository) })
         }
         composable("welcome") {
             WelcomeScreen(navController = navController, userRepository = userRepository)
@@ -61,10 +63,7 @@ fun SetupNavGraph(navController: NavHostController, userRepository: UserReposito
         composable("settings") { backStackEntry ->
             val userEmail = UserSession.currentUserEmail
             userEmail?.let {
-                val user = userRepository.getUserByEmail(it)
-                user?.let {
-                    SettingsScreen(navController = navController, user = it, userRepository = userRepository)
-                }
+                SettingsScreen(navController = navController, userEmail = it, userRepository = userRepository)
             }
         }
         composable("favorite_cities") {

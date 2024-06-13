@@ -1,9 +1,10 @@
 package com.example.weatherapp.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,53 +25,56 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.weatherapp.R
 import com.example.weatherapp.dtos.User
 import com.example.weatherapp.dtos.WeatherResponse
-import com.example.weatherapp.instances.ApiClient
-import com.example.weatherapp.services.WeatherApiService
+import com.example.weatherapp.ui.theme.BluePink
 import com.example.weatherapp.ui.theme.LightBluePink
+import com.example.weatherapp.viewModels.MainViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 @Composable
-fun MainScreen(city: String, navController: NavHostController, user: User) {
-    var weatherResponse by remember { mutableStateOf<WeatherResponse?>(null) }
+fun MainScreen(city: String, navController: NavHostController, user: User, mainViewModel: MainViewModel = viewModel()) {
+    val weatherResponse by mainViewModel.weatherResponse
 
     LaunchedEffect(city) {
-        getWeatherResponse(city) { response ->
-            weatherResponse = response
-        }
+        mainViewModel.fetchWeather(city)
     }
 
+    Image(
+        painter = painterResource(id = R.drawable.main_background),
+        contentDescription = "background",
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color.Gray.copy(alpha = 0.1f)),
+                    startY = 0.5f
+                )
+            )
+    )
     weatherResponse?.let { weather ->
-        Image(
-            painter = painterResource(id = R.drawable.main_background),
-            contentDescription = "background",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
         Column {
             MainCard(weather, user, onSettingsClick = {
                 navController.navigate("settings")
@@ -82,35 +86,17 @@ fun MainScreen(city: String, navController: NavHostController, user: User) {
     }
 }
 
-private const val API_KEY = "cecff5365fa34a0fb3d191655240106"
-private fun getWeatherResponse(city: String, callback: (WeatherResponse?) -> Unit) {
-    val apiService = ApiClient.instance.create(WeatherApiService::class.java)
-    val call = apiService.getWeather(API_KEY, city)
-
-    call.enqueue(object : Callback<WeatherResponse> {
-        override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-            if (response.isSuccessful) {
-                val weatherResponse = response.body()
-                Log.d("Request Success", "Response: ${response.body()}")
-                callback(weatherResponse)
-            } else {
-                Log.d("Request Error", "Server Error: ${response.code()}")
-                callback(null)
-            }
-        }
-
-        override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-            Log.d("Request Error", "Request Error: ${t.message}")
-            callback(null)
-        }
-    })
-}
-
 @Composable
-fun MainCard(weather: WeatherResponse, user: User, onSettingsClick: () -> Unit, onFavoriteCitiesClick: () -> Unit) {
+fun MainCard(
+    weather: WeatherResponse,
+    user: User,
+    onSettingsClick: () -> Unit,
+    onFavoriteCitiesClick: () -> Unit
+) {
     Column(
         modifier = Modifier
-            .padding(5.dp)
+            .padding(8.dp)
+            .fillMaxWidth()
     ) {
         Card(
             modifier = Modifier
@@ -120,7 +106,9 @@ fun MainCard(weather: WeatherResponse, user: User, onSettingsClick: () -> Unit, 
             shape = RoundedCornerShape(10.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
@@ -129,28 +117,30 @@ fun MainCard(weather: WeatherResponse, user: User, onSettingsClick: () -> Unit, 
                 ) {
                     Text(
                         modifier = Modifier
-                            .padding(top = 8.dp, start = 8.dp),
+                            .padding(top = 4.dp, start = 8.dp),
                         text = weather.location.localtime.split(" ")[0],
-                        style = TextStyle(fontSize = 24.sp)
+                        style = TextStyle(fontSize = 24.sp, color = Color(0xFFFFFBE5))
                     )
 
                     Text(
                         modifier = Modifier
-                            .padding(top = 8.dp, end = 8.dp),
+                            .padding(top = 4.dp, end = 8.dp),
                         text = weather.location.localtime.split(" ")[1],
-                        style = TextStyle(fontSize = 24.sp)
+                        style = TextStyle(fontSize = 24.sp, color = Color(0xFFFFFBE5))
                     )
                 }
-                Row {
+                Row(
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
                     Text(
-                        modifier = Modifier.padding(top = 8.dp),
+
                         text = weather.location.name,
-                        style = TextStyle(fontSize = 24.sp)
+                        style = TextStyle(fontSize = 32.sp, color = Color(0xFFFFFBE5))
                     )
                     Icon(
                         imageVector = Icons.Default.Favorite,
                         contentDescription = "Favorite Icon",
-                        tint = Color.Black,
+                        tint = Color(0xFFFFFBE5),
                         modifier = Modifier
                             .padding(8.dp)
                             .size(20.dp)
@@ -169,23 +159,77 @@ fun MainCard(weather: WeatherResponse, user: User, onSettingsClick: () -> Unit, 
                     Text(
                         modifier = Modifier.padding(top = 4.dp),
                         text = if (user.tempUnit == "celsius") "${weather.current.temp_c} °C" else "${weather.current.temp_f} °F",
-                        style = TextStyle(fontSize = 24.sp)
+                        style = TextStyle(fontSize = 24.sp, color = Color(0xFFFFFBE5))
                     )
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Settings Icon",
-                        tint = Color.Black,
+                        tint = Color(0xFFFFFBE5),
                         modifier = Modifier
                             .padding(8.dp)
                             .size(20.dp)
-                            .clickable { onSettingsClick() }
+                            .clickable { onSettingsClick() },
                     )
                 }
                 Text(
                     modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
                     text = weather.current.condition.text,
-                    style = TextStyle(fontSize = 18.sp)
+                    style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5))
                 )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.wind_speed_icon), // Add your wind speed icon here
+                            contentDescription = "Wind Speed",
+                            tint = Color(0xFFFFFBE5),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "${weather.current.wind_kph} kph",
+                            style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5))
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.wind_direction_icon), // Add your wind direction icon here
+                            contentDescription = "Wind Direction",
+                            tint = Color(0xFFFFFBE5),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = weather.current.wind_dir,
+                            style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5))
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.humidity_icon), // Add your humidity icon here
+                            contentDescription = "Humidity",
+                            tint = Color(0xFFFFFBE5),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "${weather.current.humidity}%",
+                            style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5))
+                        )
+                    }
+                }
             }
         }
     }
@@ -200,8 +244,8 @@ fun TabLayout(weather: WeatherResponse, user: User) {
 
     Column(
         modifier = Modifier
-            .padding(start = 5.dp, end = 5.dp)
-            .clip(RoundedCornerShape(5.dp))
+            .padding(start = 4.dp, end = 4.dp)
+            .clip(RoundedCornerShape(10.dp))
     ) {
         TabRow(
             selectedTabIndex = pagerState.currentPage,
@@ -219,9 +263,11 @@ fun TabLayout(weather: WeatherResponse, user: User) {
                         Text(
                             modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
                             text = text,
-                            style = TextStyle(fontSize = 18.sp)
+                            style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5))
                         )
-                    }
+                    },
+                    selectedContentColor = BluePink,
+                    unselectedContentColor = BluePink.copy(alpha = 0.6f)
                 )
             }
         }
@@ -243,21 +289,37 @@ fun TabToday(weather: WeatherResponse, user: User) {
     LazyColumn {
         items(weather.forecast.forecastday.first().hour) { hour ->
             val time = hour.time.split(" ")[1]
-            Row(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = time, style = TextStyle(fontSize = 18.sp))
-                Text(
-                    text = if (user.tempUnit == "celsius") "${hour.temp_c} °C" else "${hour.temp_f} °F",
-                    style = TextStyle(fontSize = 18.sp))
-                Image(
-                    painter = rememberAsyncImagePainter("https:${hour.condition.icon}"),
-                    contentDescription = "Weather Icon",
-                    modifier = Modifier.size(48.dp)
-                )
+                    .padding(2.dp),
+                backgroundColor = LightBluePink.copy(alpha = 0.3f),
+                elevation = 0.dp,
+                shape = RoundedCornerShape(10.dp)
+            )
+            {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = time,
+                        style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5)),
+                        color = Color(0xFFFFFBE5)
+                    )
+                    Text(
+                        text = if (user.tempUnit == "celsius") "${hour.temp_c} °C" else "${hour.temp_f} °F",
+                        style = TextStyle(fontSize = 18.sp), color = Color(0xFFFFFBE5)
+                    )
+                    Image(
+                        painter = rememberAsyncImagePainter("https:${hour.condition.icon}"),
+                        contentDescription = "Weather Icon",
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
         }
     }
@@ -269,23 +331,38 @@ fun TabForecast(weather: WeatherResponse, user: User) {
         modifier = Modifier.fillMaxSize()
     ) {
         items(weather.forecast.forecastday) { day ->
-            Row(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = day.date,
-                    style = TextStyle(fontSize = 18.sp),
-                    modifier = Modifier.padding(8.dp))
-                Text(text = if (user.tempUnit == "celsius") "${day.day.avgtemp_c} °C" else "${day.day.avgtemp_f} °F",
-                    style = TextStyle(fontSize = 18.sp),
-                    modifier = Modifier.padding(8.dp))
-                Image(
-                    painter = rememberAsyncImagePainter("https:${day.day.condition.icon}"),
-                    contentDescription = "Weather Icon",
-                    modifier = Modifier.size(48.dp)
-                )
+                    .padding(2.dp),
+                backgroundColor = LightBluePink.copy(alpha = 0.3f),
+                elevation = 0.dp,
+                shape = RoundedCornerShape(10.dp)
+            )
+            {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = day.date,
+                        style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5)),
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    Text(
+                        text = if (user.tempUnit == "celsius") "${day.day.avgtemp_c} °C" else "${day.day.avgtemp_f} °F",
+                        style = TextStyle(fontSize = 18.sp, color = Color(0xFFFFFBE5)),
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    Image(
+                        painter = rememberAsyncImagePainter("https:${day.day.condition.icon}"),
+                        contentDescription = "Weather Icon",
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
         }
     }

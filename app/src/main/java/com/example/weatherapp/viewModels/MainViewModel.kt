@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.example.weatherapp.dtos.User
 import com.example.weatherapp.dtos.WeatherResponse
 import com.example.weatherapp.instances.ApiClient
 import com.example.weatherapp.services.WeatherApiService
@@ -11,13 +12,28 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MainViewModel : ViewModel() {
+
+class MainViewModel(
+    private val _city: String,
+    private val _user: User
+) : ViewModel() {
     private val _weatherResponse = mutableStateOf<WeatherResponse?>(null)
     val weatherResponse: State<WeatherResponse?> = _weatherResponse
 
     private val API_KEY = "cecff5365fa34a0fb3d191655240106"
 
-    fun fetchWeather(city: String) {
+    val user: User
+        get() = _user
+
+    val city: String
+        get() = _city
+
+
+    init {
+        fetchWeather()
+    }
+
+    fun fetchWeather() {
         val apiService = ApiClient.instance.create(WeatherApiService::class.java)
         val call = apiService.getWeather(API_KEY, city)
 

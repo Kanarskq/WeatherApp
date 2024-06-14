@@ -11,7 +11,9 @@ import com.example.weatherapp.dtos.WeatherResponse
 import com.example.weatherapp.instances.ApiClient
 import com.example.weatherapp.repositories.UserRepository
 import com.example.weatherapp.services.WeatherApiService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -34,29 +36,6 @@ class FavoriteCitiesViewModel(
 
     init {
         _favoriteCities.addAll(_user.favoriteCities.map { FavoriteCity(it) })
-    }
-
-    fun isCityValid(cityName: String, callback: (Boolean) -> Unit) {
-        val apiService = ApiClient.instance.create(WeatherApiService::class.java)
-        val call = apiService.getWeather(API_KEY, cityName)
-
-        call.enqueue(object : Callback<WeatherResponse> {
-            override fun onResponse(
-                call: Call<WeatherResponse>, response: Response<WeatherResponse>
-            ) {
-                if (response.isSuccessful) {
-                    val weatherApiResponse = response.body()
-                    val cityExists = weatherApiResponse?.error == null
-                    callback(cityExists)
-                } else {
-                    callback(false)
-                }
-            }
-
-            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                callback(false)
-            }
-        })
     }
 
     fun fetchWeatherForCity(cityName: String) {
@@ -89,25 +68,48 @@ class FavoriteCitiesViewModel(
     }
 
     fun addFavoriteCity(cityName: String, callback: (Boolean) -> Unit) {
-        isCityValid(cityName) { exists ->
-            if (exists) {
+        viewModelScope.launch {
+            val isValid = withContext(Dispatchers.IO) {
+                checkCityValidity(cityName)
+            }
+            if (isValid) {
                 _favoriteCities.add(FavoriteCity(cityName))
                 val updatedUser = _user.copy(favoriteCities = _favoriteCities.map { it.cityName })
-                userRepository.updateUser(updatedUser)
+                withContext(Dispatchers.IO) {
+                    userRepository.updateUser(updatedUser)
+                }
+                fetchWeatherForCity(cityName)
                 callback(true)
             } else {
                 callback(false)
             }
         }
     }
-    fun removeFavoriteCityAndUpdateUI(cityName: String) {
-        removeFavoriteCity(cityName)
-        _weatherData.remove(cityName)
+
+    private suspend fun checkCityValidity(cityName: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val apiService = ApiClient.instance.create(WeatherApiService::class.java)
+                val response = apiService.getWeather(API_KEY, cityName).execute()
+                response.isSuccessful && response.body()?.error == null
+            } catch (e: Exception) {
+                false
+            }
+        }
     }
 
-    fun removeFavoriteCity(cityName: String) {
+    fun removeFavoriteCityAndUpdateUI(cityName: String) {
+        viewModelScope.launch {
+            removeFavoriteCity(cityName)
+            _weatherData.remove(cityName)
+        }
+    }
+
+    private suspend fun removeFavoriteCity(cityName: String) {
         _favoriteCities.removeAll { it.cityName == cityName }
         val updatedUser = user.copy(favoriteCities = _favoriteCities.map { it.cityName })
-        userRepository.updateUser(updatedUser)
+        withContext(Dispatchers.IO) {
+            userRepository.updateUser(updatedUser)
+        }
     }
 }

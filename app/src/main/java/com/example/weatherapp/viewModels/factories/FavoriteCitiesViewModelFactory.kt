@@ -10,6 +10,7 @@ class FavoriteCitiesViewModelFactory(
     private val userRepository: UserRepository,
     private val user: User
 ) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(FavoriteCitiesViewModel::class.java)) {
             return FavoriteCitiesViewModel(userRepository, user) as T

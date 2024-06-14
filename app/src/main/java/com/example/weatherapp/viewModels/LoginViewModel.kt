@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.UserSession
 import com.example.weatherapp.repositories.UserRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     var email = mutableStateOf("")
@@ -14,7 +16,9 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
 
     fun login(onSuccess: (String) -> Unit, onFailure: (String) -> Unit) {
         viewModelScope.launch {
-            val user = userRepository.getUserByEmail(email.value)
+            val user = withContext(Dispatchers.IO) {
+                userRepository.getUserByEmail(email.value)
+            }
             if (user != null && user.password == password.value) {
                 UserSession.currentUserEmail = email.value
                 if (user.favoriteCities.isNotEmpty()) {

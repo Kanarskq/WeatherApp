@@ -36,7 +36,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.weatherapp.R
@@ -45,7 +44,6 @@ import com.example.weatherapp.dtos.WeatherResponse
 import com.example.weatherapp.ui.theme.BluePink
 import com.example.weatherapp.ui.theme.LightBluePink
 import com.example.weatherapp.viewModels.MainViewModel
-import com.example.weatherapp.viewModels.factories.MainViewModelFactory
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -53,14 +51,13 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
-    city: String,
     navController: NavHostController,
-    user: User,
-    mainViewModel: MainViewModel = viewModel(factory = MainViewModelFactory())) {
+    mainViewModel: MainViewModel
+) {
     val weatherResponse by mainViewModel.weatherResponse
 
-    LaunchedEffect(city) {
-        mainViewModel.fetchWeather(city)
+    LaunchedEffect(Unit) {
+        mainViewModel.fetchWeather()
     }
 
     Image(
@@ -81,12 +78,19 @@ fun MainScreen(
     )
     weatherResponse?.let { weather ->
         Column {
-            MainCard(weather, user, onSettingsClick = {
+            MainCard(weather, mainViewModel.user, onSettingsClick = {
                 navController.navigate("settings")
             }, onFavoriteCitiesClick = {
                 navController.navigate("favorite_cities")
             })
-            TabLayout(weather, user)
+            TabLayout(weather, mainViewModel.user)
+        }
+    }?: run {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Loading...")
         }
     }
 }

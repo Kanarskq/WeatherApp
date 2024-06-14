@@ -6,15 +6,15 @@ import android.database.Cursor
 import com.example.weatherapp.db.UserDb
 import com.example.weatherapp.dtos.User
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class UserRepository(context: Context) {
     private val dbHelper = UserDb(context)
     private val gson = Gson()
 
-    fun addUser(user: User): Boolean {
+    suspend fun addUser(user: User): Boolean = withContext(Dispatchers.IO) {
         val db = dbHelper.writableDatabase
-
-        // Check if email already exists
         val cursor: Cursor = db.query(
             UserDb.TABLE_USERS,
             arrayOf(UserDb.COLUMN_ID),
@@ -28,7 +28,7 @@ class UserRepository(context: Context) {
 
         if (emailExists) {
             db.close()
-            return false // Email already exists
+            return@withContext false
         }
 
         val values = ContentValues().apply {
@@ -39,10 +39,10 @@ class UserRepository(context: Context) {
         }
         val result = db.insert(UserDb.TABLE_USERS, null, values)
         db.close()
-        return result != -1L
+        return@withContext result != -1L
     }
 
-    fun getUserByEmail(email: String): User? {
+    suspend fun getUserByEmail(email: String): User? = withContext(Dispatchers.IO) {
         val db = dbHelper.readableDatabase
         val cursor: Cursor = db.query(
             UserDb.TABLE_USERS,
@@ -69,10 +69,10 @@ class UserRepository(context: Context) {
         }
         cursor.close()
         db.close()
-        return user
+        return@withContext user
     }
 
-    fun updateUser(user: User): Boolean {
+    suspend fun updateUser(user: User): Boolean = withContext(Dispatchers.IO) {
         val db = dbHelper.writableDatabase
         val values = ContentValues().apply {
             put(UserDb.COLUMN_EMAIL, user.email)
@@ -82,7 +82,6 @@ class UserRepository(context: Context) {
         }
         val result = db.update(UserDb.TABLE_USERS, values, "${UserDb.COLUMN_ID} = ?", arrayOf(user.id.toString()))
         db.close()
-        return result > 0
+        return@withContext result > 0
     }
-
 }

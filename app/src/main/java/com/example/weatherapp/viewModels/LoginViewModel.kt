@@ -18,7 +18,7 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
             if (user != null && user.password == password.value) {
                 UserSession.currentUserEmail = email.value
                 if (user.favoriteCities.isNotEmpty()) {
-                    onSuccess(user.favoriteCities.first())
+                    onSuccess("main/${user.favoriteCities.first()}")
                 } else {
                     onSuccess("welcome")
                 }

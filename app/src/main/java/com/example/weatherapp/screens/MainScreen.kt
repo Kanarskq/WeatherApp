@@ -45,13 +45,18 @@ import com.example.weatherapp.dtos.WeatherResponse
 import com.example.weatherapp.ui.theme.BluePink
 import com.example.weatherapp.ui.theme.LightBluePink
 import com.example.weatherapp.viewModels.MainViewModel
+import com.example.weatherapp.viewModels.factories.MainViewModelFactory
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainScreen(city: String, navController: NavHostController, user: User, mainViewModel: MainViewModel = viewModel()) {
+fun MainScreen(
+    city: String,
+    navController: NavHostController,
+    user: User,
+    mainViewModel: MainViewModel = viewModel(factory = MainViewModelFactory())) {
     val weatherResponse by mainViewModel.weatherResponse
 
     LaunchedEffect(city) {

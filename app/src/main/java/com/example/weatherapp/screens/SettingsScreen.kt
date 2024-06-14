@@ -33,19 +33,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.weatherapp.R
-import com.example.weatherapp.repositories.UserRepository
 import com.example.weatherapp.ui.theme.BluePink
 import com.example.weatherapp.ui.theme.LightBluePink
 import com.example.weatherapp.viewModels.SettingsViewModel
-import com.example.weatherapp.viewModels.factories.SettingsViewModelFactory
 
 @Composable
-fun SettingsScreen(navController: NavHostController, userEmail: String, userRepository: UserRepository) {
-    val viewModel: SettingsViewModel = viewModel(factory = SettingsViewModelFactory(userRepository, userEmail))
-    val user by viewModel.user.collectAsState()
+fun SettingsScreen(navController: NavHostController, settingsViewModel: SettingsViewModel) {
+    val user by settingsViewModel.user.collectAsState()
 
     user?.let { currentUser ->
         var isCelsius by remember { mutableStateOf(currentUser.tempUnit == "celsius") }
@@ -128,7 +124,7 @@ fun SettingsScreen(navController: NavHostController, userEmail: String, userRepo
             ) {
                 Button(
                     onClick = {
-                        viewModel.updateUserTemperatureUnit(isCelsius)
+                        settingsViewModel.updateUserTemperatureUnit(isCelsius)
                         navController.navigate("main/${currentUser.favoriteCities.firstOrNull()}")
                     },
                     colors = ButtonDefaults.buttonColors(backgroundColor = BluePink),

@@ -96,8 +96,8 @@ fun LoginScreen(navController: NavHostController, loginViewModel: LoginViewModel
         Button(
             onClick = {
                 loginViewModel.login(
-                    onSuccess = { city ->
-                        navController.navigate("main/$city")
+                    onSuccess = { route ->
+                        navController.navigate(route)
                     },
                     onFailure = { error ->
                         loginViewModel.errorMessage.value = error

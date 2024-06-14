@@ -46,7 +46,6 @@ import com.example.weatherapp.R
 import com.example.weatherapp.dtos.FavoriteCity
 import com.example.weatherapp.dtos.ShortWeatherData
 import com.example.weatherapp.dtos.User
-import com.example.weatherapp.repositories.UserRepository
 import com.example.weatherapp.ui.theme.BluePink
 import com.example.weatherapp.ui.theme.LightBluePink
 import com.example.weatherapp.viewModels.FavoriteCitiesViewModel
@@ -55,17 +54,15 @@ import java.util.Locale
 @Composable
 fun FavoriteCitiesScreen(
     favoriteCitiesViewModel: FavoriteCitiesViewModel,
-    navController: NavHostController,
-    user: User,
-    userRepository: UserRepository
+    navController: NavHostController
 ) {
     var newFavoriteCity by remember { mutableStateOf("") }
     var showMessage by remember { mutableStateOf(false) }
-    var favoriteCities by remember { mutableStateOf(user.favoriteCities) }
+    val favoriteCities by remember { mutableStateOf(favoriteCitiesViewModel.favoriteCities) }
 
     LaunchedEffect(favoriteCities) {
         favoriteCities.forEach { city ->
-            favoriteCitiesViewModel.fetchWeatherForCity(city)
+            favoriteCitiesViewModel.fetchWeatherForCity(city.cityName)
         }
     }
 
@@ -103,7 +100,8 @@ fun FavoriteCitiesScreen(
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(value = newFavoriteCity,
+            OutlinedTextField(
+                value = newFavoriteCity,
                 onValueChange = { newFavoriteCity = it },
                 label = { Text("Enter city name", color = Color(0xFFFFFBE5)) },
                 modifier = Modifier
@@ -119,12 +117,8 @@ fun FavoriteCitiesScreen(
             Button(
                 onClick = {
                     if (newFavoriteCity.isNotBlank()) {
-                        favoriteCitiesViewModel.isCityValid(newFavoriteCity) { exists ->
-                            if (exists) {
-                                val updatedUser =
-                                    user.copy(favoriteCities = user.favoriteCities + newFavoriteCity)
-                                userRepository.updateUser(updatedUser)
-                                favoriteCities = updatedUser.favoriteCities
+                        favoriteCitiesViewModel.addFavoriteCity(newFavoriteCity) { added ->
+                            if (added) {
                                 newFavoriteCity = ""
                                 showMessage = false
                             } else {
@@ -152,21 +146,18 @@ fun FavoriteCitiesScreen(
 
         LazyColumn {
             items(favoriteCities) { favoriteCity ->
-                val weatherData = favoriteCitiesViewModel.weatherData[favoriteCity]
-                FavoriteCityItem(favoriteCity = FavoriteCity(favoriteCity),
+                val weatherData = favoriteCitiesViewModel.weatherData[favoriteCity.cityName]
+                FavoriteCityItem(
+                    favoriteCity = favoriteCity,
                     weatherData = weatherData,
-                    user = user,
+                    user = favoriteCitiesViewModel.user,
                     onItemClick = {
-                        navController.navigate("main/$favoriteCity")
+                        navController.navigate("main/${favoriteCity.cityName}")
                     },
                     onDeleteItemClick = {
-                        val updatedFavoriteCities =
-                            user.favoriteCities.filter { it != favoriteCity }
-                        val updatedUser = user.copy(favoriteCities = updatedFavoriteCities)
-                        userRepository.updateUser(updatedUser)
-                        favoriteCities = updatedUser.favoriteCities
-                        favoriteCitiesViewModel.removeFavoriteCity(favoriteCity)
-                    })
+                        favoriteCitiesViewModel.removeFavoriteCityAndUpdateUI(favoriteCity.cityName)
+                    }
+                )
             }
         }
     }

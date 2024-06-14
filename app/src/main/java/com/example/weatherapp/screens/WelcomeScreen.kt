@@ -28,18 +28,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.weatherapp.R
 import com.example.weatherapp.UserSession
-import com.example.weatherapp.repositories.UserRepository
 import com.example.weatherapp.ui.theme.BluePink
 import com.example.weatherapp.viewModels.WelcomeViewModel
-import com.example.weatherapp.viewModels.factories.WelcomeViewModelFactory
 
 @Composable
-fun WelcomeScreen(navController: NavController, userRepository: UserRepository) {
-    val viewModel: WelcomeViewModel = viewModel(factory = WelcomeViewModelFactory(userRepository))
+fun WelcomeScreen(navController: NavController, welcomeViewModel: WelcomeViewModel) {
     val city = remember { mutableStateOf("Odesa") }
 
     Image(
@@ -102,7 +98,7 @@ fun WelcomeScreen(navController: NavController, userRepository: UserRepository) 
                 if (city.value.isNotEmpty()) {
                     val userEmail = UserSession.currentUserEmail
                     userEmail?.let {
-                        viewModel.addCityToUserFavorites(it, city.value) {
+                        welcomeViewModel.addCityToUserFavorites(it, city.value) {
                             navController.navigate("main/${city.value}")
                         }
                     }
